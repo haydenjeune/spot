@@ -1,0 +1,22 @@
+---
+ImageId: 'ami-01e3b8c3a51e88954'
+InstanceType: 't2.micro'
+KeyName: 'your_key_pair_name'
+MinCount: 1
+MaxCount: 1
+SecurityGroupIds:
+  - 'sg-06473cbf1533293d8'
+UserData: ''
+IamInstanceProfile:
+  Name: 'instance_iam_role_name'
+TagSpecifications:
+  - ResourceType: 'instance'
+    Tags:
+      - Key: 'Name'
+        Value: 'instance_name'
+InstanceMarketOptions:
+  MarketType: 'spot'
+  SpotOptions:
+    MaxPrice: '0.1'
+    SpotInstanceType: 'one-time'
+...
