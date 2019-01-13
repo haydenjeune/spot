@@ -19,11 +19,12 @@ def list(ctx):
 
 
 @main.command()
+@click.argument('config_path')
 @click.pass_context
-def launch(ctx):
+def launch(ctx, config_path):
     """Launches an instance based on the config file at the path passed in"""
     # TODO: document which policies are required for this to work
-    ctx.obj['manager'].launch("spot/gpu.yaml")
+    ctx.obj['manager'].launch(config_path)
 
 
 @main.command()
