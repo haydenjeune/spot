@@ -3,8 +3,10 @@ from spot.launch_config import LaunchConfig
 from tabulate import tabulate
 
 
-def get_name(tags):
-    # What a strange way for boto to return tags, surely a single dict would do
+def get_name_from_instance(instance):
+    """Extract the Name of an instance given it's boto3 Instance object"""
+    tags = instance.tags
+    # What a strange way for boto to return tags, surely a single dict would do?
     if tags is not None:
         for tag in tags:
             if tag['Key'] == "Name":
@@ -13,6 +15,7 @@ def get_name(tags):
 
 
 class SpotManager(object):
+    """A class to encapsulate the logic for managing spot instances."""
     def __init__(self, profile_name):
         session = boto3.session.Session(profile_name=profile_name)
         self.ec2 = session.resource("ec2")
@@ -29,23 +32,29 @@ class SpotManager(object):
         self.attr_maps.add(AttributeMap('Spot Instance', lambda i: i.spot_instance_request_id is not None))
 
     def launch(self, path):
+        """Launches a spot instance based on the config yaml file at the given path."""
         cfg = LaunchConfig(path)
         print(cfg.kwargs())
         self.ec2.create_instances(**cfg.kwargs())
 
     def list(self):
+        """Lists all running instances in the default region."""
         instances = self.ec2.instances.all()
         instance_data = [self.attr_maps.evaluate(i) for i in instances]
         headers = self.attr_maps.names()
         print(tabulate(instance_data, headers=headers))
 
     def terminate(self, instance_id):
+        """Terminates an instance with the given instance_id."""
         instance = self.ec2.Instance(instance_id)
-
         instance.terminate()
 
 
 class AttributeMap(object):
+    """A map representing the output of a function when applied to a given object.
+
+    This is used for extracting information from instance objects for listing.
+    """
     def __init__(self, name, map_func):
         self.name = name
         self.map_func = map_func
@@ -55,6 +64,7 @@ class AttributeMap(object):
 
 
 class MapCollection(object):
+    """A collection of AttributeMaps with methods for returning all names and evaluating maps in the collection"""
     def __init__(self):
         self.maps = []
 
