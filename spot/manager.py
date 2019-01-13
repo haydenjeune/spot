@@ -17,15 +17,16 @@ def get_name_from_instance(instance):
 class SpotManager(object):
     """A class to encapsulate the logic for managing spot instances."""
     def __init__(self, profile_name):
-        session = boto3.session.Session(profile_name=profile_name)
-        self.ec2 = session.resource("ec2")
+        self.session = boto3.session.Session(profile_name=profile_name)
+        self.ec2 = self.session.resource("ec2")
 
         # Maps for displaying instance information
         self.attr_maps = MapCollection()
         self.attr_maps.add(AttributeMap('ID', lambda i: i.instance_id))
-        self.attr_maps.add(AttributeMap('Name', lambda i: get_name(i.tags)))
+        self.attr_maps.add(AttributeMap('Name', get_name_from_instance))
         self.attr_maps.add(AttributeMap('Type', lambda i: i.instance_type))
         self.attr_maps.add(AttributeMap('State', lambda i: i.state["Name"]))
+        self.attr_maps.add(AttributeMap('Avail. Zone', lambda i: i.placement['AvailabilityZone']))
         self.attr_maps.add(AttributeMap('Public DNS', lambda i: i.public_dns_name))
         self.attr_maps.add(AttributeMap('Public IP', lambda i: i.public_ip_address))
         self.attr_maps.add(AttributeMap('AMI ID', lambda i: i.image_id))
@@ -34,7 +35,12 @@ class SpotManager(object):
     def launch(self, path):
         """Launches a spot instance based on the config yaml file at the given path."""
         cfg = LaunchConfig(path)
-        print(cfg.kwargs())
+
+        # If no AZ has been specified, place in the cheapest AZ
+        if cfg.is_not_defined("Placement"):
+            cfg.add(Placement={'AvailabilityZone': self._find_cheapest_AZ(cfg.get('InstanceType'))})
+
+        print(f"Launching {cfg.get('InstanceType')} in {cfg.get('Placement')['AvailabilityZone']}")
         self.ec2.create_instances(**cfg.kwargs())
 
     def list(self):
@@ -48,6 +54,24 @@ class SpotManager(object):
         """Terminates an instance with the given instance_id."""
         instance = self.ec2.Instance(instance_id)
         instance.terminate()
+
+    def _find_cheapest_AZ(self, instance_type):
+        """Finds the cheapest AZ in the default region for the specified type of spot instance."""
+        client = self.session.client('ec2')
+
+        # Count number of AZs in region to determine how many records to request
+        az = client.describe_availability_zones()
+        az_count = len(az['AvailabilityZones'])
+
+        # Request most recent price for all AZs
+        response = client.describe_spot_price_history(InstanceTypes=[instance_type], MaxResults=az_count,
+                                                        ProductDescriptions=['Linux/UNIX (Amazon VPC)'])
+        price_dict = {}
+        for zone_price in response['SpotPriceHistory']:
+            price_dict[zone_price['AvailabilityZone']] = zone_price['SpotPrice']
+
+        # Return name of cheapest AZ
+        return min(price_dict, key=price_dict.get)
 
 
 class AttributeMap(object):
@@ -81,5 +105,6 @@ class MapCollection(object):
 if __name__ == "__main__":
     manager = SpotManager('spot')
     manager.list()
-    manager.launch("gpu.yaml")
+    print(manager._find_cheapest_AZ('p2.xlarge'))
+    manager.launch('gpu.yaml')
     manager.list()

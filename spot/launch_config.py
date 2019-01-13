@@ -8,6 +8,18 @@ class LaunchConfig(object):
         if path is not None:
             self.load(path)
 
+    def is_not_defined(self, attribute):
+        """Checks too see if a given attribute has not been defined yet."""
+        return attribute not in self.arg_dict
+
+    def add(self, **kwargs):
+        """Adds attributes to the config based on keyword arguments."""
+        self._merge_new_dict(kwargs)
+
+    def get(self, key):
+        """Returns the value associated with a key in the config."""
+        return self.arg_dict[key]
+
     def load(self, path):
         """Loads the contents the specified yaml config file into the object."""
         with open(path) as file:
