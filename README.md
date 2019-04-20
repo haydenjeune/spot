@@ -18,7 +18,7 @@ Launches an instance based on the yaml config file at `path`
 ```spot terminate <instance_id>```
 Terminates the instance with `instance_id`
 
-```spot ssh <instance_id> <user>```
-Opens an interactive ssh session into the instance as user (eg user@x.x.x.x). This command expects any private key files necessary to be stored with the pem extension, in a directory called .ssh under your home directory.
+```spot ssh <instance_id> <user> [--forward]```
+Requires OpenSSH to be installed. Opens an interactive ssh session into the instance as user (eg user@x.x.x.x). This command expects any private key files necessary to be stored with the pem extension, in a directory called .ssh under your home directory. Optionally enables local port forwarding with a given string.
 
 More coming soon
