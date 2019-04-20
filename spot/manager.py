@@ -20,10 +20,9 @@ def get_name_from_instance(instance):
 
 class SpotManager(object):
     """A class to encapsulate the logic for managing spot instances."""
-    def __init__(self, profile_name):
-        self.session = boto3.session.Session(profile_name=profile_name)
-        # TODO: Move region selection to a config file
-        self.ec2 = self.session.resource("ec2", region_name="us-east-1")
+    def __init__(self, profile_name, region):
+        self.session = boto3.session.Session(profile_name=profile_name, region_name=region)
+        self.ec2 = self.session.resource("ec2", region_name=region)
 
         # Maps for displaying instance information
         self.attr_maps = MapCollection()

@@ -4,11 +4,13 @@ from spot.manager import SpotManager
 
 @click.group()
 @click.option("--profile", default="spot", type=click.STRING)
+@click.option("--region", default="us-east-1", type=click.STRING)
 @click.pass_context
-def main(ctx, profile):
+def main(ctx, profile, region):
     """Main entry point for spot command line"""
     ctx.ensure_object(dict)
-    ctx.obj["manager"] = SpotManager(profile)
+    # TODO: Move region selection to a config file
+    ctx.obj["manager"] = SpotManager(profile, region)
 
 
 @main.command()
