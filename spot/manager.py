@@ -62,7 +62,7 @@ class SpotManager(object):
         instance = self.ec2.Instance(instance_id)
         instance.terminate()
 
-    def ssh(self, instance_id, user):
+    def ssh(self, instance_id, user, local_forwarding):
         """Opens a ssh session into the instance with the given instance id"""
         instance = self.ec2.Instance(instance_id)
 
@@ -76,6 +76,10 @@ class SpotManager(object):
             if not key_location.exists():
                 raise RuntimeError(f"No private key exists at {str(key_location)}")
             ssh_command.extend(["-i", str(key_location)])
+
+        # Add local port forwarding if needed
+        if local_forwarding is not None:
+            ssh_command.extend(["-L", local_forwarding])
 
         call(ssh_command)
 

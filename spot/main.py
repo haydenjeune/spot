@@ -40,10 +40,11 @@ def terminate(ctx, instance_id):
 @main.command()
 @click.argument('instance_id')
 @click.argument('user')
+@click.option("--forward", default=None)
 @click.pass_context
-def ssh(ctx, instance_id, user):
+def ssh(ctx, instance_id, user, forward):
     """Opens an interactive ssh session to an instance based on the instance id"""
-    ctx.obj["manager"].ssh(instance_id, user)
+    ctx.obj["manager"].ssh(instance_id, user, forward)
 
 
 if __name__ == "__main__":
