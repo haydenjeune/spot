@@ -41,8 +41,11 @@ class SpotManager(object):
         cfg = LaunchConfig(path)
 
         # If no AZ has been specified, place in the cheapest AZ
+        cheapest = self._find_cheapest_AZ(cfg.get('InstanceType'))
         if cfg.is_not_defined("Placement"):
-            cfg.add(Placement={'AvailabilityZone': self._find_cheapest_AZ(cfg.get('InstanceType'))})
+            print(f"No AZ specified. {cheapest['AvailabilityZone']} at ${cheapest['SpotPrice']} chosen.")
+            cfg.add(Placement={'AvailabilityZone': cheapest['AvailabilityZone']})
+
 
         print(f"Launching {cfg.get('InstanceType')} in {cfg.get('Placement')['AvailabilityZone']}")
         self.ec2.create_instances(**cfg.kwargs())
@@ -91,8 +94,11 @@ class SpotManager(object):
         for zone_price in response['SpotPriceHistory']:
             price_dict[zone_price['AvailabilityZone']] = zone_price['SpotPrice']
 
-        # Return name of cheapest AZ
-        return min(price_dict, key=price_dict.get)
+        # Return name and price of cheapest AZ
+        cheapest = {}
+        cheapest['AvailabilityZone'], cheapest['SpotPrice'] = min(price_dict.items(), key=lambda x: x[1])
+
+        return cheapest
 
 
 class AttributeMap(object):
