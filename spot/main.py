@@ -35,5 +35,14 @@ def terminate(ctx, instance_id):
     ctx.obj["manager"].terminate(instance_id)
 
 
+@main.command()
+@click.argument('instance_id')
+@click.argument('user')
+@click.pass_context
+def ssh(ctx, instance_id, user):
+    """Opens an interactive ssh session to an instance based on the instance id"""
+    ctx.obj["manager"].ssh(instance_id, user)
+
+
 if __name__ == "__main__":
     main()

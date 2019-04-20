@@ -1,6 +1,10 @@
+from subprocess import call
+from pathlib import Path
+
 import boto3
-from spot.launch_config import LaunchConfig
 from tabulate import tabulate
+
+from spot.launch_config import LaunchConfig
 
 
 def get_name_from_instance(instance):
@@ -18,7 +22,8 @@ class SpotManager(object):
     """A class to encapsulate the logic for managing spot instances."""
     def __init__(self, profile_name):
         self.session = boto3.session.Session(profile_name=profile_name)
-        self.ec2 = self.session.resource("ec2")
+        # TODO: Move region selection to a config file
+        self.ec2 = self.session.resource("ec2", region_name="us-east-1")
 
         # Maps for displaying instance information
         self.attr_maps = MapCollection()
@@ -54,6 +59,23 @@ class SpotManager(object):
         """Terminates an instance with the given instance_id."""
         instance = self.ec2.Instance(instance_id)
         instance.terminate()
+
+    def ssh(self, instance_id, user):
+        """Opens a ssh session into the instance with the given instance id"""
+        instance = self.ec2.Instance(instance_id)
+
+        # Base ssh command
+        ssh_command = ["ssh", f"{user}@{instance.public_ip_address}"]
+
+        # Add private key if needed
+        key_name = instance.key_name
+        if key_name is not None:
+            key_location = Path.home() / ".ssh" / (key_name + ".pem")
+            if not key_location.exists():
+                raise RuntimeError(f"No private key exists at {str(key_location)}")
+            ssh_command.extend(["-i", str(key_location)])
+
+        call(ssh_command)
 
     def _find_cheapest_AZ(self, instance_type):
         """Finds the cheapest AZ in the default region for the specified type of spot instance."""
